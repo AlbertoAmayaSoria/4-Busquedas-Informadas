@@ -272,7 +272,7 @@ def busqueda_A_estrella(problema, s0, heuristica):
                 heapq.heappush(frontera, (f, hijo))
                 visitados[hijo.estado] = g
     
-    return None, nodos_visitados
+    return nodo_actual, nodos_visitados
 
 
     #raise NotImplementedError('Hay que hacerlo de tarea \
