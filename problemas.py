@@ -439,10 +439,22 @@ def h_2_problema_1(nodo):
                 return 1"""
 
     return 0
-
+"""
+La heurística h_1 = 0 es adimsible porque nunca sobreestima el costo real.
+Sin embargo, no aporta información sobre la distancia al objetivo, por lo que
+A* se comporta como búsqueda de costo uniforme.
+La heurística h_2 devuelve 0 si el cubo esta resuelto y 1 en caso contrario.
+Esta heurística es admisible porque cualquier estado no resuelto requiere
+al menos un movimiento para alcanzar el objetivo, por lo que
+h_2 = 1 <= h*
+h_2 domina a h_1 ya que para todo estado n, h_2 >= h_1 y existen estados
+donde h_2 > h_1. Por lo tanto, h_2 es una heurística más informativa y
+permite que A* explore menos nodos
+"""
 
 
 def compara_metodos(problema, pos_inicial, heuristica_1, heuristica_2):
+
     """
     Compara en un cuadro lo nodos expandidos y el costo de la solución
     de varios métodos de búsqueda
