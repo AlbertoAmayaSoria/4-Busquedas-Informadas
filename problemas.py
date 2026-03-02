@@ -99,6 +99,7 @@ def h_1_camion_magico(nodo):
     lo cual se convierte en dijkstra, porque no establece
     una guia hacia el objetivo, pero no miente por exceso, por lo que
     nunca sobreestima
+
     """
     return 0
     
@@ -128,6 +129,7 @@ def h_2_camion_magico(nodo):
     Despues el valor de log2(N/x) lo redondeamos hacia abajo para no sobreestimar
     utilizamos el maximo entre 0 y lo que devuelva math.floor....., para asegurar
     que la heuristica no sea negativa
+
     """
     x = nodo.estado
     N = problema.N
@@ -144,19 +146,205 @@ class PbCuboRubik(busquedas.ProblemaBusqueda):
     la documentación de forma clara y concisa.
     
     https://en.wikipedia.org/wiki/Rubik%27s_Cube
+
+    Modelo de búsqueda para el cubo Runik
+
+    https://www.iberorubik.com/tutoriales/3x3x3/nomenclatura/
+
+    para lo cual se utiliza la siguiente nomenclatura para las caras:
+    A: Cara superior    (0-8)
+    F: Cara frontal     (9-17)
+    D: Cara derecha     (18-26)
+    T: Cara trasera     (27-35)
+    I: Cara izquierda   (36-44)
+    B: Cara inferior    (45-53)
     
     """
-    def __init__(self):
-        raise NotImplementedError('Hay que hacerlo de tarea')
+    def __init__(self, estado_inicial):
+        # Cubo 3x3x3
+        if len(estado_inicial) != 54:
+            raise ValueError("El estado debe tener 54 elementos")
+        
+        self.estado_inicial = tuple(estado_inicial)
+
+        #raise NotImplementedError('Hay que hacerlo de tarea')
 
     def acciones(self, estado):
-        raise NotImplementedError('Hay que hacerlo de tarea')
+        """
+        Tenemos los movimientos A y A' ya que se pueden realizar en sentido 
+        horario y antihorario, derecha e izquierda para la misma cara
+
+        """
+        return [
+            "A","A'",
+            "F","F'",
+            "D","D'",
+            "T","T'",
+            "I","I'",
+            "B","B'"
+        ]
+
+        #raise NotImplementedError('Hay que hacerlo de tarea')
+
+    """
+    Rotaciones
+    """
+    def rotar_cara(self, e, i):
+        e[i+0], e[i+1], e[i+2], e[i+5], e[i+8], e[i+7], e[i+6], e[i+3] = \
+        e[i+6], e[i+3], e[i+0], e[i+1], e[i+2], e[i+5], e[i+8], e[i+7]
+
+    def rotar_A(self, e):
+
+        self.rotar_cara(e, 0)
+
+        f = e[9:12]
+        d = e[18:21]
+        t = e[27:30]
+        i = e[36:39]
+
+        e[9:12] = i
+        e[18:21] = f
+        e[27:30] = d
+        e[36:39] = t
+
+    def rotar_B(self, e):
+
+        self.rotar_cara(e, 45)
+
+        f = e[15:18]
+        d = e[24:27]
+        t = e[33:36]
+        i = e[42:45]
+
+        e[15:18] = d
+        e[24:27] = t
+        e[33:36] = i
+        e[42:45] = f
+
+    def rotar_F(self, e):
+
+        self.rotar_cara(e, 9)
+
+        a = [e[6], e[7], e[8]]
+        d = [e[18], e[21], e[24]]
+        b = [e[45], e[46], e[47]]
+        i = [e[38], e[41], e[44]]
+
+        e[6], e[7], e[8] = i[::-1]
+        e[18], e[21], e[24] = a
+        e[45], e[46], e[47] = d[::-1]
+        e[38], e[41], e[44] = b
+
+    def rotar_T(self, e):
+
+        self.rotar_cara(e, 27)
+
+        a = [e[0], e[1], e[2]]
+        d = [e[20], e[23], e[26]]
+        b = [e[51], e[52], e[53]]
+        i = [e[36], e[39], e[42]]
+
+        e[0], e[1], e[2] = d
+        e[20], e[23], e[26] = b[::-1]
+        e[51], e[52], e[53] = i
+        e[36], e[39], e[42] = a[::-1]
+
+    def rotar_D(self, e):
+
+        self.rotar_cara(e, 18)
+
+        a = [e[2], e[5], e[8]]
+        f = [e[11], e[14], e[17]]
+        b = [e[47], e[50], e[53]]
+        t = [e[27], e[30], e[33]]
+
+        e[2], e[5], e[8] = f
+        e[11], e[14], e[17] = b
+        e[47], e[50], e[53] = t[::-1]
+        e[27], e[30], e[33] = a[::-1]
+
+    def rotar_I(self, e):
+
+        self.rotar_cara(e, 36)
+
+        a = [e[0], e[3], e[6]]
+        f = [e[9], e[12], e[15]]
+        b = [e[45], e[48], e[51]]
+        t = [e[29], e[32], e[35]]
+
+        e[0], e[3], e[6] = t[::-1]
+        e[9], e[12], e[15] = a
+        e[45], e[48], e[51] = f
+        e[29], e[32], e[35] = b[::-1]
+
+    
 
     def sucesor(self, estado, accion):
-        raise NotImplementedError('Hay que hacerlo de tarea')
+        """
+        Aplicamos la rotación y devolvemos el nuevo estado, para no duplicar el
+        número de funciones, para la inversa aplicamos el mismo movimiento 3 veces
+
+        """
+        estado = list(estado)
+
+        if accion == "A":
+            self.rotar_A(estado)
+        
+        elif accion == "A'":
+            for _ in range(3):
+                self.rotar_A(estado)
+        
+        elif accion == "F":
+            self.rotar_F(estado)
+        
+        elif accion == "F'":
+            for _ in range(3):
+                self.rotar_F(estado)
+        
+        elif accion == "D":
+            self.rotar_D(estado)
+        
+        elif accion == "D'":
+            for _ in range(3):
+                self.rotar_D(estado)
+        
+        elif accion == "T":
+            self.rotar_T(estado)
+        
+        elif accion == "T'":
+            for _ in range(3):
+                self.rotar_T(estado)
+
+        elif accion == "I":
+            self.rotar_I(estado)
+        
+        elif accion == "I'":
+            for _ in range(3):
+                self.rotar_I(estado)
+
+        elif accion == "B":
+            self.rotar_B(estado)
+        
+        elif accion == "B'":
+            for _ in range(3):
+                self.rotar_B(estado)
+        
+        else:
+            raise ValueError("Acción inválida")
+        
+        return tuple(estado), 1
+
+
+        #raise NotImplementedError('Hay que hacerlo de tarea')
 
     def terminal(self, estado):
-        raise NotImplementedError('Hay que hacerlo de tarea')
+        for i in range(0, 54, 9):
+            cara = estado[i:i+9]
+            if len(set(cara)) != 1:
+                return False
+        return True
+
+        #raise NotImplementedError('Hay que hacerlo de tarea')
 
     @staticmethod
     def bonito(estado):
@@ -164,7 +352,38 @@ class PbCuboRubik(busquedas.ProblemaBusqueda):
         El prettyprint de un estado dado
 
         """
-        raise NotImplementedError('Hay que hacerlo de tarea')
+        def cara(i):
+            return estado[i:i+9]
+
+        A = cara(0)
+        F = cara(9)
+        D = cara(18)
+        T = cara(27)
+        I = cara(36)
+        B = cara(45)
+
+        print("      {} {} {}".format(*A[0:3]))
+        print("      {} {} {}".format(*A[3:6]))
+        print("      {} {} {}".format(*A[6:9]))
+        print()
+
+        for i in range(3):
+            print(
+                "{} {} {}   {} {} {}   {} {} {}   {} {} {}".format(
+                    *I[i*3:(i+1)*3],
+                    *F[i*3:(i+1)*3],
+                    *D[i*3:(i+1)*3],
+                    *T[i*3:(i+1)*3]
+                )
+            )
+
+        print()
+
+        print("      {} {} {}".format(*B[0:3]))
+        print("      {} {} {}".format(*B[3:6]))
+        print("      {} {} {}".format(*B[6:9]))
+
+        #raise NotImplementedError('Hay que hacerlo de tarea')
  
 
 # ------------------------------------------------------------
@@ -174,6 +393,11 @@ def h_1_problema_1(nodo):
     """
     DOCUMENTA LA HEURÍSTICA QUE DESARROLLES Y DA UNA JUSTIFICACIÓN
     PLATICADA DE PORQUÉ CREES QUE LA HEURÍSTICA ES ADMISIBLE
+
+    De manera muy simplista, la heurística es admisible al simplemente 
+    ser el algoritmo de busqueda A*, y siempre la heuristica es
+    h(x) = 0 <= h*(x) 
+    siempre la heurística sera menor o igual que la solución optima
 
     """
     return 0
@@ -189,7 +413,31 @@ def h_2_problema_1(nodo):
     DOCUMENTA LA HEURÍSTICA DE DESARROLLES Y DA UNA JUSTIFICACIÓN
     PLATICADA DE PORQUÉ CREES QUE LA HEURÍSTICA ES ADMISIBLE
 
+    Si el cubo esta resuelto la heuristica es 0, si el cubo no esta resuelto al menos
+    un movimiento es necesario para resolverlo, lo cual no sobreestima
     """
+
+    estado = nodo.estado
+
+    for cara in range(6):
+
+        estado = nodo.estado
+
+    for cara in range(6):
+        inicio = cara * 9
+        color = estado[inicio]
+
+        for i in range(inicio, inicio + 9):
+            if estado[i] != color:
+                return 1
+
+        """inicio = cara * 9
+        color = estado[inicio]
+
+        for i in range(inicio, inicio + 9):
+            if estado[i] != color:
+                return 1"""
+
     return 0
 
 
@@ -231,7 +479,35 @@ if __name__ == "__main__":
 
     # Compara los métodos de búsqueda para el problema del cubo de rubik
     # con las heurísticas que desarrollaste
-    #pos_inicial = XXXXXXXXXX  # <--- PONLE LA POSICIÓN INICIAL QUE QUIERAS
-    #problema = PbCuboRubik( XXXXXXXXXX )  # <--- PONLE LOS PARÁMETROS QUE NECESITES
+    pos_inicial = (
+        0,0,0,0,0,0,0,0,0,
+        4,4,4,1,1,1,1,1,1,
+        1,1,1,2,2,2,2,2,2,
+        2,2,2,3,3,3,3,3,3,
+        3,3,3,4,4,4,4,4,4,
+        5,5,5,5,5,5,5,5,5
+    )  # <--- PONLE LA POSICIÓN INICIAL QUE QUIERAS
+    """
+    No se limitan bien los estados fisicamente inmposibles, lo cual causa que se quede
+    colgado con mas movimientos
+    """
+
+    """0,0,0,0,0,0,4,4,4,
+        1,1,1,1,1,1,2,2,2,
+        2,2,2,2,2,2,3,3,3,
+        3,3,3,3,3,3,1,1,1,
+        4,4,4,4,4,4,5,5,5,
+        5,5,5,5,5,5,0,0,0
+        
+        0,0,0,0,0,0,4,4,4,
+        1,1,1,1,1,1,0,0,0,
+        2,2,2,2,2,2,1,1,1,
+        3,3,3,3,3,3,2,2,2,
+        4,4,4,4,4,4,5,5,5,
+        5,5,5,5,5,5,3,3,3
+    """
+
+    problema = PbCuboRubik( pos_inicial )  # <--- PONLE LOS PARÁMETROS QUE NECESITES
+    compara_metodos(problema, pos_inicial, h_1_problema_1, h_2_problema_1)
     #compara_metodos(problema, h_1_problema_1, h_2_problema_1)
     
